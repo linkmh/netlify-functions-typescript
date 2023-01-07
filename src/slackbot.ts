@@ -36,7 +36,7 @@ export async function handler (event: APIGatewayEvent, context: Context) {
     };
   }
 
-  const SlackEvent: ReceiverEvent = {
+  const slackEvent: ReceiverEvent = {
     body:payload,
     ack: async (response) => {
       return new Promise<void>((resolve,reject) => {
@@ -49,6 +49,6 @@ export async function handler (event: APIGatewayEvent, context: Context) {
     },
   };
   
-  await app.processEvent(SlackEvent);
+  await app.processEvent(slackEvent);
 
 }
