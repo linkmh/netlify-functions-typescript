@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv'
 dotenv.config();
 
 import { APIGatewayEvent, Context } from 'aws-lambda'
-import { App, ExpressReceiver, ReceiverEvent } from '@slack/bolt'
+import { App, ExpressReceiver, LogLevel, ReceiverEvent } from '@slack/bolt'
 
 
 const expressReceiver = new ExpressReceiver ({
@@ -12,35 +12,67 @@ const expressReceiver = new ExpressReceiver ({
 
 const app = new App({
   signingSecret: `${process.env.SLACK_SIGNING_SECRET}`,
-  token: `${process.env.SLACK_BOT_TOKEN}`,
-  receiver: expressReceiver
+  token: `${process.env.SLACK_SOCKET_TOKEN}`,
+  receiver: expressReceiver,
+  logLevel: LogLevel.DEBUG,
+  port: 3999
+  
 });
 
-app.message(async ({ say }) => {
+app.message('Hello', async ({ message, say }) => {
   await say("Hi :wave:");
 });
 
-function parseRequestBody(stringBody: string | null) {
+app.command('/sayhello', async({body, ack}) => {
+  ack();
+  await app.client.chat.postEphemeral({
+    token: process.env.SLACK_BOT_TOKEN,
+    channel: body.channel_id,
+    text: "Greetings, user!" ,
+    user: body.user_id
+  });
+});
+
+function parseRequestBody(stringBody: string | null, contentType: string | undefined) {
   try {
-    return JSON.parse(stringBody ?? "");
-  } catch {
-    return undefined;
-  }
+    if (!stringBody) {
+        return "";
+    }
+
+    let result: any = {};
+
+    if (contentType && contentType === "application/json") {
+        return JSON.parse(stringBody);
+    }
+
+    let keyValuePairs: string[] = stringBody.split("&");
+    keyValuePairs.forEach(function (pair: string): void {
+        let individualKeyValuePair: string[] = pair.split("=");
+        result[individualKeyValuePair[0]] = decodeURIComponent(individualKeyValuePair[1] || "");
+    });
+    return JSON.parse(JSON.stringify(result));
+
+} catch {
+    return "";
+}
 }
 export async function handler (event: APIGatewayEvent, context: Context) {
-  const payload = parseRequestBody(event.body);
+  console.log(event.body)
+  const payload = parseRequestBody(event.body,event.headers["content-type"]);
+  console.log(payload)
   if(payload && payload.type && payload.type === 'url_verification'){
+    console.log("verified")
     return {
       statusCode: 200,
       body: payload.challenge
     };
   }
 
+  
   const slackEvent: ReceiverEvent = {
     body: payload,
     ack: async (response) => {
       return new Promise<void>((resolve,reject) => {
-        resolve();
         return {
           statusCode: 200,
           body: response ?? ""
