@@ -40,6 +40,7 @@ async function getCampaignData(objectId) {
   try {
     const apiResponse = await hubspotClient.crm.objects.basicApi.getById(process.env.HUBSPOT_OBJECT_TYPE, objectId, properties, propertiesWithHistory, associations, archived, idProperty);
     apiResponse.properties.hs_pipeline_stage = await getCampaignPipelineStage(apiResponse.properties.hs_pipeline_stage,apiResponse.properties.hs_pipeline)
+    console.log()
     return apiResponse;
   } catch (e) {
     e.message === 'HTTP request failed'
