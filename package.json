@@ -3,7 +3,7 @@
     "description": "TypeScript template for Netlify Functions",
     "version": "0.0.1",
     "scripts": {
-        "build": "tsc"
+        "build": "tsc && mkdir -p dist && cp -R src/* dist/"
     },
     "author": {
         "name": "Clyde D'Souza"
