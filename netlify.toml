@@ -1,2 +1,8 @@
 [build]
   command = "npm run build"
+  functions = "netlify/functions"
+  publish = "dist"
+[functions]
+  node_bundler = "esbuild"
+[context.production]
+  command = "mkdir -p dist && cp -R src/* dist/"
